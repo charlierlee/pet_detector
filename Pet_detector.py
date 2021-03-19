@@ -1,7 +1,7 @@
 ######## Raspberry Pi Pet Detector Camera using TensorFlow Object Detection API #########
 #
-# Author: Evan Juras
-# Date: 10/15/18
+# Original Author: Evan Juras
+# Original Date: 10/15/18
 # Description:
 #
 # This script implements a "pet detector" that alerts the user if a pet is
