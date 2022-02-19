@@ -4,8 +4,14 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import math
+import time
+from datetime import datetime
+from dotenv import load_dotenv
+
+load_dotenv('.env')
 
 dataset_path = os.getcwd()+'/FaceDataset/'# path to the dataset
+camera_url = os.environ.get('CAMERA_URL')
 
 def plot_image(images, titles, h,w,n_row,n_col):
     plt.figure(figsize=(2.2*n_col,2.2*n_row))
@@ -48,9 +54,9 @@ A = np.resize(all_img,(tot_images,shape[0]*shape[1]))#Creating a matrix of n^2 x
 mean_vector = np.sum(A,axis=0,dtype='float64')/tot_images
 mean_matrix = np.tile(mean_vector,(tot_images,1))#Calculating mean for all the 400 images
 A_tilde = A - mean_matrix# Matrix A - the mean value of all the images
-plt.imshow(np.resize(mean_vector,(shape[0],shape[1])),cmap='gray')#display the mean image vector
-plt.title('Mean Image')
-plt.show()
+#plt.imshow(np.resize(mean_vector,(shape[0],shape[1])),cmap='gray')#display the mean image vector
+#plt.title('Mean Image')
+#plt.show()
 
 
 
@@ -76,61 +82,84 @@ eigenfaces.shape
 eigenface_labels = [x for x in range(eigenfaces.shape[0])]#List of images 
 plot_image(eigenfaces,eigenface_labels,112,92,2,10)#Display image using eigenvectors for each image
 
-
-test_img = cv2.imread('test.jpeg', cv2.IMREAD_GRAYSCALE)
-test_img = cv2.resize(test_img,(shape[1],shape[0]))#resize the test image to 92 x 112
-mean_sub_testimg=np.reshape(test_img,(test_img.shape[0]*test_img.shape[1]))-mean_vector#Subtract test image with the mean value
-plt.imshow(np.reshape(mean_sub_testimg,(112,92)),cmap='gray')
-plt.title("Mean Subtracted Test Image")
-plt.show()
-            
-
-q=350 # 350 eigenvectors is chosen
-E = eigenfaces[:q].dot(mean_sub_testimg)#Projecting the test image into the face space
-E.shape
+cap = cv2.VideoCapture(camera_url)
+hasCaptured = True
+EXTENSION = 'jpg'
+file_name_format = "{:%Y%m%d_%H%M%S}.{:s}"
+while hasCaptured:
+    hasCaptured, original = cap.read()
+    test_img = cv2.cvtColor(original, cv2.COLOR_BGR2GRAY)
+#    cv2.imshow('frame',test_img)
 
 
+    #test_img = cv2.imread('test3.jpg', cv2.IMREAD_GRAYSCALE)
+    test_img = cv2.resize(test_img,(shape[1],shape[0]))#resize the test image to 92 x 112
+    mean_sub_testimg=np.reshape(test_img,(test_img.shape[0]*test_img.shape[1]))-mean_vector#Subtract test image with the mean value
+#    plt.imshow(np.reshape(mean_sub_testimg,(112,92)),cmap='gray')
+#    plt.title("Mean Subtracted Test Image")
+#    plt.show()
+                
 
-
-reconstruction = eigenfaces[:q].T.dot(E)#Reconstruct the test image using eigenvectors
-reconstruction.shape
-
-plt.imshow(np.reshape(reconstruction,(shape[0],shape[1])),cmap='gray')
-plt.title("Reconstructed image -"+ str(q)+" eigenfaces")
-plt.show()
-
-
-
-# Detect Face
-thres_1 = 3000 # Chosen threshold to detect face
-projected_new_img_vect=eigenfaces[:q].T @ E#Perform Linear combination for the new face space
-diff = mean_sub_testimg-projected_new_img_vect
-beta = math.sqrt(diff.dot(diff))#Find the difference between the projected test image vector and the mean vector of the images
-
-if beta<thres_1:
-    print("Face Detected in the image!", beta)
-else:
-    print("No face Detected in the image!", beta)
+    q=350 # 350 eigenvectors is chosen
+    E = eigenfaces[:q].dot(mean_sub_testimg)#Projecting the test image into the face space
+    E.shape
 
 
 
-#Classify the image belongs to which class
-thres_2 = 3000
-smallest_value =None # to keep track of the smallest value
-index = None #to keep track of the class that produces the smallest value
-for z in range(tot_images):#Loop through all the image vectors
-    E_z=eigenfaces[:q].dot(A_tilde[z])#Calculate and represent the vectors of the image in the dataset
-    diff = E-E_z
-    epsilon_z = math.sqrt(diff.dot(diff))
-    if smallest_value==None:
-        smallest_value=epsilon_z
-        index = z
-    if smallest_value>epsilon_z:
-        smallest_value=epsilon_z
-        index=z
-if smallest_value<thres_2:
-    print(smallest_value,names[index])
-else:
-    print(smallest_value,"unknown Face")
+
+    reconstruction = eigenfaces[:q].T.dot(E)#Reconstruct the test image using eigenvectors
+    reconstruction.shape
+
+ #   plt.imshow(np.reshape(reconstruction,(shape[0],shape[1])),cmap='gray')
+ #   plt.title("Reconstructed image -"+ str(q)+" eigenfaces")
+ #   plt.show()
+
+#   Show the reconstructed face 
+#    cv2.imshow('frame',np.reshape(reconstruction,(shape[0],shape[1])))
+
+    # Detect Face
+    thres_1 = 3100 #2475 # Chosen threshold to detect face
+    projected_new_img_vect=eigenfaces[:q].T @ E#Perform Linear combination for the new face space
+    diff = mean_sub_testimg-projected_new_img_vect
+    beta = math.sqrt(diff.dot(diff))#Find the difference between the projected test image vector and the mean vector of the images
+
+    if beta<thres_1:
+        print("Face Detected in the image!", beta)
+        date = datetime.now()
+        file_name = file_name_format.format(date, EXTENSION)
+        cv2.imwrite("detected/" + file_name, original) 
+        time.sleep(1)
+    #else:
+    #    print("No face Detected in the image!", beta)
+
+#    time.sleep(1)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+        
+'''
+    #Classify the image belongs to which class
+    thres_2 = 3000
+    smallest_value =None # to keep track of the smallest value
+    index = None #to keep track of the class that produces the smallest value
+    for z in range(tot_images):#Loop through all the image vectors
+        E_z=eigenfaces[:q].dot(A_tilde[z])#Calculate and represent the vectors of the image in the dataset
+        diff = E-E_z
+        epsilon_z = math.sqrt(diff.dot(diff))
+        if smallest_value==None:
+            smallest_value=epsilon_z
+            index = z
+        if smallest_value>epsilon_z:
+            smallest_value=epsilon_z
+            index=z
+    if smallest_value<thres_2:
+        print(smallest_value,names[index])
+    else:
+        print(smallest_value,"unknown Face")
+'''
 
 
+
+# After the loop release the cap object
+cap.release()
+# Destroy all the windows
+cv2.destroyAllWindows()

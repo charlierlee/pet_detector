@@ -1,2 +1,3 @@
 hidden_setup.sh
 venv
+.env
