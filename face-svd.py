@@ -7,6 +7,7 @@ import math
 import time
 from datetime import datetime
 from dotenv import load_dotenv
+import random
 
 load_dotenv('.env')
 
@@ -85,7 +86,7 @@ plot_image(eigenfaces,eigenface_labels,112,92,2,10)#Display image using eigenvec
 cap = cv2.VideoCapture(camera_url)
 hasCaptured = True
 EXTENSION = 'jpg'
-file_name_format = "{:%Y%m%d_%H%M%S}.{:s}"
+file_name_format = "{:%Y%m%d_%H%M%S.%f}-{:f}.{:s}"
 while hasCaptured:
     hasCaptured, original = cap.read()
     test_img = cv2.cvtColor(original, cv2.COLOR_BGR2GRAY)
@@ -118,7 +119,7 @@ while hasCaptured:
 #    cv2.imshow('frame',np.reshape(reconstruction,(shape[0],shape[1])))
 
     # Detect Face
-    thres_1 = 3100 #2475 # Chosen threshold to detect face
+    thres_1 = 2475 #3100 # Chosen threshold to detect face
     projected_new_img_vect=eigenfaces[:q].T @ E#Perform Linear combination for the new face space
     diff = mean_sub_testimg-projected_new_img_vect
     beta = math.sqrt(diff.dot(diff))#Find the difference between the projected test image vector and the mean vector of the images
@@ -126,11 +127,10 @@ while hasCaptured:
     if beta<thres_1:
         print("Face Detected in the image!", beta)
         date = datetime.now()
-        file_name = file_name_format.format(date, EXTENSION)
+        file_name = file_name_format.format(date, random.random(), EXTENSION)
         cv2.imwrite("detected/" + file_name, original) 
-        time.sleep(1)
-    #else:
-    #    print("No face Detected in the image!", beta)
+    else:
+        print("No face Detected in the image!", beta)
 
 #    time.sleep(1)
     if cv2.waitKey(1) & 0xFF == ord('q'):
