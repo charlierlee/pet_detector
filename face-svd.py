@@ -73,11 +73,11 @@ eigenvectors = eigenvectors[:,idx]#Sort the eigenvectors according to the highes
 
 
 eigenvector_C = A_tilde.T @ eigenvectors# perform linear combination with Matrix A_tilde
-eigenvector_C.shape#Each column is an eigenvector
+print(eigenvector_C.shape)#Each column is an eigenvector
 
 
 eigenfaces = preprocessing.normalize(eigenvector_C.T)#Normalize the vector
-eigenfaces.shape
+print(eigenfaces.shape)
 
 
 eigenface_labels = [x for x in range(eigenfaces.shape[0])]#List of images 
@@ -86,7 +86,7 @@ plot_image(eigenfaces,eigenface_labels,112,92,2,10)#Display image using eigenvec
 cap = cv2.VideoCapture(camera_url)
 hasCaptured = True
 EXTENSION = 'jpg'
-file_name_format = "{:%Y%m%d_%H%M%S.%f}-{:f}.{:s}"
+file_name_format = "{:%Y%m%d_%H%M%S.%f}-{:f}-{:s}.{:s}"
 success, image = cap.read()
 
 #################### Setting up parameters ################
@@ -96,7 +96,7 @@ fps = cap.get(cv2.CAP_PROP_FPS) # Gets the frames per second
 multiplier = fps * seconds
 
 #################### Initiate Process ################
-
+thres_1 = 2400 #3100 # Chosen threshold to detect face
 while success:
     frameId = int(round(cap.get(1))) #current frame number, rounded b/c sometimes you get frame intervals which aren't integers...this adds a little imprecision but is likely good enough
     success, original = cap.read()
@@ -117,13 +117,13 @@ while success:
 
         q=350 # 350 eigenvectors is chosen
         E = eigenfaces[:q].dot(mean_sub_testimg)#Projecting the test image into the face space
-        E.shape
+        #print(E.shape)
 
 
 
 
         reconstruction = eigenfaces[:q].T.dot(E)#Reconstruct the test image using eigenvectors
-        reconstruction.shape
+        #print(reconstruction.shape)
 
     #   plt.imshow(np.reshape(reconstruction,(shape[0],shape[1])),cmap='gray')
     #   plt.title("Reconstructed image -"+ str(q)+" eigenfaces")
@@ -133,7 +133,7 @@ while success:
     #    cv2.imshow('frame',np.reshape(reconstruction,(shape[0],shape[1])))
 
         # Detect Face
-        thres_1 = 2475 #3100 # Chosen threshold to detect face
+        
         projected_new_img_vect=eigenfaces[:q].T @ E#Perform Linear combination for the new face space
         diff = mean_sub_testimg-projected_new_img_vect
         beta = math.sqrt(diff.dot(diff))#Find the difference between the projected test image vector and the mean vector of the images
@@ -141,8 +141,9 @@ while success:
         if beta<thres_1:
             print("Face Detected in the image!", beta)
             date = datetime.now()
-            file_name = file_name_format.format(date, random.random(), EXTENSION)
+            file_name = file_name_format.format(date, random.random(),str(beta), EXTENSION)
             cv2.imwrite("detected/" + file_name, original) 
+            thres_1 = beta
         else:
             print("No face Detected in the image!", beta)
 
