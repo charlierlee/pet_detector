@@ -80,7 +80,7 @@ def get_eigenfaces():
     plot_image(eigenfaces,eigenface_labels,112,92,2,10)#Display image using eigenvectors for each image
     return mean_vector, shape, eigenfaces
 
-def process_frame(mean_vector, shape, eigenfaces, frame, thres_1):
+def process_frame(mean_vector, shape, eigenfaces, frame, thres_1, thres_2):
     test_img = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 #    cv2.imshow('frame',test_img)
 
@@ -115,15 +115,13 @@ def process_frame(mean_vector, shape, eigenfaces, frame, thres_1):
     diff = mean_sub_testimg-projected_new_img_vect
     beta = math.sqrt(diff.dot(diff))#Find the difference between the projected test image vector and the mean vector of the images
 
-    if beta<thres_1:
+    if beta>thres_1 and beta < thres_2:
         print("Face Detected in the image!", beta)
         date = datetime.now()
         file_name = file_name_format.format(date, random.random(),str(beta), EXTENSION)
         cv2.imwrite("detected/" + file_name, frame) 
-        thres_1 = beta
     else:
         print("No face Detected in the image!", beta)
-    return thres_1
 
 load_dotenv('.env')
 camera_url = os.environ.get('CAMERA_URL')
@@ -137,8 +135,8 @@ seconds = 2
 fps = cap.get(cv2.CAP_PROP_FPS) # Gets the frames per second
 multiplier = fps * seconds
 #################### Initiate Process ################
-thres_1 = 2400 #3100 # Chosen threshold to detect face
-
+thres_1 = 3100 #3100 # Chosen threshold to detect face
+thres_2 = 3400
 
 mean_vector, shape, eigenfaces = get_eigenfaces()
 
@@ -148,7 +146,7 @@ while success:
 
     if frameId % multiplier == 0:
 
-        thres_1 = process_frame(mean_vector, shape, eigenfaces, frame, thres_1)
+        process_frame(mean_vector, shape, eigenfaces, frame, thres_1, thres_2)
 
     #    time.sleep(1)
         if cv2.waitKey(1) & 0xFF == ord('q'):
