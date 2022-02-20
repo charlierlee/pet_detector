@@ -87,55 +87,69 @@ cap = cv2.VideoCapture(camera_url)
 hasCaptured = True
 EXTENSION = 'jpg'
 file_name_format = "{:%Y%m%d_%H%M%S.%f}-{:f}.{:s}"
-while hasCaptured:
-    hasCaptured, original = cap.read()
-    test_img = cv2.cvtColor(original, cv2.COLOR_BGR2GRAY)
-#    cv2.imshow('frame',test_img)
+success, image = cap.read()
+
+#################### Setting up parameters ################
+
+seconds = 2
+fps = cap.get(cv2.CAP_PROP_FPS) # Gets the frames per second
+multiplier = fps * seconds
+
+#################### Initiate Process ################
+
+while success:
+    frameId = int(round(cap.get(1))) #current frame number, rounded b/c sometimes you get frame intervals which aren't integers...this adds a little imprecision but is likely good enough
+    success, original = cap.read()
+
+    if frameId % multiplier == 0:
+
+        test_img = cv2.cvtColor(original, cv2.COLOR_BGR2GRAY)
+    #    cv2.imshow('frame',test_img)
 
 
-    #test_img = cv2.imread('test3.jpg', cv2.IMREAD_GRAYSCALE)
-    test_img = cv2.resize(test_img,(shape[1],shape[0]))#resize the test image to 92 x 112
-    mean_sub_testimg=np.reshape(test_img,(test_img.shape[0]*test_img.shape[1]))-mean_vector#Subtract test image with the mean value
-#    plt.imshow(np.reshape(mean_sub_testimg,(112,92)),cmap='gray')
-#    plt.title("Mean Subtracted Test Image")
-#    plt.show()
-                
+        #test_img = cv2.imread('test3.jpg', cv2.IMREAD_GRAYSCALE)
+        test_img = cv2.resize(test_img,(shape[1],shape[0]))#resize the test image to 92 x 112
+        mean_sub_testimg=np.reshape(test_img,(test_img.shape[0]*test_img.shape[1]))-mean_vector#Subtract test image with the mean value
+    #    plt.imshow(np.reshape(mean_sub_testimg,(112,92)),cmap='gray')
+    #    plt.title("Mean Subtracted Test Image")
+    #    plt.show()
+                    
 
-    q=350 # 350 eigenvectors is chosen
-    E = eigenfaces[:q].dot(mean_sub_testimg)#Projecting the test image into the face space
-    E.shape
-
-
+        q=350 # 350 eigenvectors is chosen
+        E = eigenfaces[:q].dot(mean_sub_testimg)#Projecting the test image into the face space
+        E.shape
 
 
-    reconstruction = eigenfaces[:q].T.dot(E)#Reconstruct the test image using eigenvectors
-    reconstruction.shape
 
- #   plt.imshow(np.reshape(reconstruction,(shape[0],shape[1])),cmap='gray')
- #   plt.title("Reconstructed image -"+ str(q)+" eigenfaces")
- #   plt.show()
 
-#   Show the reconstructed face 
-#    cv2.imshow('frame',np.reshape(reconstruction,(shape[0],shape[1])))
+        reconstruction = eigenfaces[:q].T.dot(E)#Reconstruct the test image using eigenvectors
+        reconstruction.shape
 
-    # Detect Face
-    thres_1 = 2475 #3100 # Chosen threshold to detect face
-    projected_new_img_vect=eigenfaces[:q].T @ E#Perform Linear combination for the new face space
-    diff = mean_sub_testimg-projected_new_img_vect
-    beta = math.sqrt(diff.dot(diff))#Find the difference between the projected test image vector and the mean vector of the images
+    #   plt.imshow(np.reshape(reconstruction,(shape[0],shape[1])),cmap='gray')
+    #   plt.title("Reconstructed image -"+ str(q)+" eigenfaces")
+    #   plt.show()
 
-    if beta<thres_1:
-        print("Face Detected in the image!", beta)
-        date = datetime.now()
-        file_name = file_name_format.format(date, random.random(), EXTENSION)
-        cv2.imwrite("detected/" + file_name, original) 
-    else:
-        print("No face Detected in the image!", beta)
+    #   Show the reconstructed face 
+    #    cv2.imshow('frame',np.reshape(reconstruction,(shape[0],shape[1])))
 
-#    time.sleep(1)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-        
+        # Detect Face
+        thres_1 = 2475 #3100 # Chosen threshold to detect face
+        projected_new_img_vect=eigenfaces[:q].T @ E#Perform Linear combination for the new face space
+        diff = mean_sub_testimg-projected_new_img_vect
+        beta = math.sqrt(diff.dot(diff))#Find the difference between the projected test image vector and the mean vector of the images
+
+        if beta<thres_1:
+            print("Face Detected in the image!", beta)
+            date = datetime.now()
+            file_name = file_name_format.format(date, random.random(), EXTENSION)
+            cv2.imwrite("detected/" + file_name, original) 
+        else:
+            print("No face Detected in the image!", beta)
+
+    #    time.sleep(1)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
 '''
     #Classify the image belongs to which class
     thres_2 = 3000
