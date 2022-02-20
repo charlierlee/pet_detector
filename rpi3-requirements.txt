@@ -1,0 +1,6 @@
+#opencv-python
+opencv-contrib-python==4.5.3.56
+numpy==1.22.2
+scikit-learn
+matplotlib
+python-dotenv
