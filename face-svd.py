@@ -24,7 +24,7 @@ def get_eigenfaces():
     dataset_path = os.getcwd()+'/FaceDataset/'# path to the dataset
     tot_images =0
     shape = None
-    for images in glob.glob(dataset_path + '/**', recursive=True):#Loop through all the images in the folder
+    for images in sorted(glob.glob(dataset_path + '/**', recursive=True)):#Loop through all the images in the folder
         if images[-3:] == 'pgm' or images[-3:] == 'jpg':
             tot_images += 1
     print(tot_images)#Number of m is 400
@@ -33,16 +33,15 @@ def get_eigenfaces():
     all_img = np.zeros((tot_images,shape[0],shape[1]),dtype='float64')#Creating 0 matrix with 112 rows and 92 columns of zeros for 400 images
     names = list()
     i=0
-    for folder in glob.glob(dataset_path + '/*'):#Loop through folders
-        for _ in range(10):
-            names.append(folder[-3:].replace('/',''))
-        for image in glob.glob(folder +'/*'):#Loop through images
+    for folder in sorted(glob.glob(dataset_path + '/*')):#Loop through folders
+        for image in sorted(glob.glob(folder +'/*')):#Loop through images
+            names.append(folder[-3:].replace('/','') + "/" + str((i+1) % 10))
             read_image = cv2.imread(image,cv2.IMREAD_GRAYSCALE)
             resized_image =cv2.resize(read_image,(shape[1],shape[0]))#cv2.resize resizes an image into (# column x # height)
             all_img[i]=np.array(resized_image)
             i+=1
 
-    plot_image(all_img,names,112,92,2,10)
+    #plot_image(all_img,names,112,92,10,10)
 
 
 
@@ -77,7 +76,8 @@ def get_eigenfaces():
 
 
     eigenface_labels = [x for x in range(eigenfaces.shape[0])]#List of images 
-    plot_image(eigenfaces,eigenface_labels,112,92,2,10)#Display image using eigenvectors for each image
+    #plot_image(eigenfaces,eigenface_labels,112,92,2,10)#Display image using eigenvectors for each image
+    #plt.show()
     return mean_vector, shape, eigenfaces
 
 def process_frame(mean_vector, shape, eigenfaces, frame, thres_1, thres_2):
@@ -90,9 +90,9 @@ def process_frame(mean_vector, shape, eigenfaces, frame, thres_1, thres_2):
 #    plt.imshow(np.reshape(mean_sub_testimg,(112,92)),cmap='gray')
 #    plt.title("Mean Subtracted Test Image")
 #    plt.show()
-                
+    
 
-    q=350 # 350 eigenvectors is chosen
+    q=100 # 350 eigenvectors is chosen
     E = eigenfaces[:q].dot(mean_sub_testimg)#Projecting the test image into the face space
     #print(E.shape)
 
@@ -107,14 +107,14 @@ def process_frame(mean_vector, shape, eigenfaces, frame, thres_1, thres_2):
 #   plt.show()
 
 #   Show the reconstructed face 
-#    cv2.imshow('frame',np.reshape(reconstruction,(shape[0],shape[1])))
+    #cv2.imshow('frame',np.reshape(reconstruction,(shape[0],shape[1])))
 
     # Detect Face
     
-    projected_new_img_vect=eigenfaces[:q].T @ E#Perform Linear combination for the new face space
+    projected_new_img_vect=np.matmul(eigenfaces[:q].T, E)#Perform Linear combination for the new face space
     diff = mean_sub_testimg-projected_new_img_vect
     beta = math.sqrt(diff.dot(diff))#Find the difference between the projected test image vector and the mean vector of the images
-
+    
     if beta>thres_1 and beta < thres_2:
         print("Face Detected in the image!", beta)
         date = datetime.now()
