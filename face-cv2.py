@@ -1,9 +1,9 @@
+#https://opencv-tutorial.readthedocs.io/en/latest/face/face.html
 import os
 import cv2
-import numpy as np
-import matplotlib.pyplot as plt
 from dotenv import load_dotenv
-
+from datetime import datetime
+import random
 
 def process_frame(frame):
     RED = (0, 0, 255)
@@ -12,23 +12,28 @@ def process_frame(frame):
     face_detector = cv2.CascadeClassifier(path)
     face_rects = face_detector.detectMultiScale(gray,
             scaleFactor=1.1,
-            minNeighbors=5, 
+            minNeighbors=7, 
             minSize=(30, 30),
             flags = cv2.CASCADE_SCALE_IMAGE)
-    print(f'found {len(face_rects)} face(s)')
-    for rect in face_rects:
-        cv2.rectangle(frame, rect, RED, 2)
+    if len(face_rects) > 0:
+        for rect in face_rects:
+            cv2.rectangle(frame, rect, RED, 2)
+        date = datetime.now()
+        file_name = file_name_format.format(date, random.random(), EXTENSION)
+        cv2.imwrite("detected/" + file_name, frame) 
+        print(f'found {len(face_rects)} face(s)')
+
     cv2.imshow('window', frame)
 
 load_dotenv('.env')
 camera_url = os.environ.get('CAMERA_URL')
 cap = cv2.VideoCapture(camera_url)
 EXTENSION = 'jpg'
-file_name_format = "{:%Y%m%d_%H%M%S.%f}-{:f}-{:s}.{:s}"
+file_name_format = "{:%Y%m%d_%H%M%S.%f}-{:f}.{:s}"
 success, image = cap.read()
 
 #################### Setting up parameters ################
-seconds = 2
+seconds = 1
 fps = cap.get(cv2.CAP_PROP_FPS) # Gets the frames per second
 multiplier = fps * seconds
 #################### Initiate Process ################
