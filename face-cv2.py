@@ -12,8 +12,8 @@ def process_frame(frame):
     face_detector = cv2.CascadeClassifier(path)
     face_rects = face_detector.detectMultiScale(gray,
             scaleFactor=1.1,
-            minNeighbors=7, 
-            minSize=(30, 30),
+            minNeighbors=9, 
+            minSize=(80, 80),
             flags = cv2.CASCADE_SCALE_IMAGE)
     if len(face_rects) > 0:
         for rect in face_rects:
