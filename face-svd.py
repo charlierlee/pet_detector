@@ -87,12 +87,12 @@ def process_frame(mean_vector, shape, eigenfaces, frame, thres_1, thres_2):
     #test_img = cv2.imread('test3.jpg', cv2.IMREAD_GRAYSCALE)
     test_img = cv2.resize(test_img,(shape[1],shape[0]))#resize the test image to 92 x 112
     mean_sub_testimg=np.reshape(test_img,(test_img.shape[0]*test_img.shape[1]))-mean_vector#Subtract test image with the mean value
-#    plt.imshow(np.reshape(mean_sub_testimg,(112,92)),cmap='gray')
+#    plt.imshow(np.reshape(mean_sub_testimg,(shape)),cmap='gray')
 #    plt.title("Mean Subtracted Test Image")
 #    plt.show()
     
 
-    q=100 # 350 eigenvectors is chosen
+    q=350 # 350 eigenvectors is chosen
     E = eigenfaces[:q].dot(mean_sub_testimg)#Projecting the test image into the face space
     #print(E.shape)
 
